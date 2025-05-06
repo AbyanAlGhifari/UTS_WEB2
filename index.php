@@ -1,16 +1,11 @@
 <?php
-
-require_once __DIR__ . '/config/Database.php';
-
 spl_autoload_register(function ($class) {
-    $base_dir = __DIR__ . '/';
-
-    $file = $base_dir . str_replace('\\', '/', $class) . '.php';
-
-    if (file_exists($file)) {
-        require_once $file;
-    }
+    $file = __DIR__ . '/' . str_replace('\\', '/', $class) . '.php';
+    if (file_exists($file)) require_once $file;
 });
+
+// Pastikan router.php berada di lokasi yang sama dengan index.php
+require_once __DIR__ . '/router.php';
 
 use Controllers\FakultasController;
 use Controllers\JurusanController;
@@ -20,175 +15,21 @@ function e($str) {
     return htmlspecialchars($str, ENT_QUOTES, 'UTF-8');
 }
 
-$pageTitle = "Dashboard";
-
-$menu = $_GET['menu'] ?? 'home';
+$menu = strtolower($_GET['menu'] ?? 'home');
 $action = $_GET['action'] ?? 'index';
 $id = $_GET['id'] ?? null;
 $keyword = $_GET['keyword'] ?? '';
 
-ob_start();
-
-switch ($menu) {
-    case 'fakultas':
-        $ctrl = new FakultasController();
-        $pageTitle = "Kelola Fakultas";
-
-        if ($action == 'index') {
-            $items = $ctrl->index($keyword);
-            include __DIR__ . '/views/fakultas_index.php';
-        } elseif ($action == 'create') {
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                $nama = $_POST['nama'] ?? '';
-                if ($nama) {
-                    $ctrl->create(['nama' => $nama]);
-                    header('Location: index.php?menu=fakultas');
-                    exit;
-                }
-            }
-            include __DIR__ . '/views/fakultas_form.php';
-        } elseif ($action == 'edit' && $id) {
-            $item = $ctrl->find($id);
-            if (!$item) {
-                echo "<p>Data tidak ditemukan</p>";
-            } else {
-                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                    $nama = $_POST['nama'] ?? '';
-                    if ($nama) {
-                        $ctrl->update($id, ['nama' => $nama]);
-                        header('Location: index.php?menu=fakultas');
-                        exit;
-                    }
-                }
-                include __DIR__ . '/views/fakultas_form.php';
-            }
-        } elseif ($action == 'delete' && $id) {
-            $ctrl->delete($id);
-            header('Location: index.php?menu=fakultas');
-            exit;
-        }
-        break;
-
-    case 'jurusan':
-        $ctrl = new JurusanController();
-        $pageTitle = "Kelola Jurusan";
-
-        if ($action == 'index') {
-            $items = $ctrl->index($keyword);
-            include __DIR__ . '/views/jurusan_index.php';
-        } elseif ($action == 'create') {
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                $nama = $_POST['nama'] ?? '';
-                $fakultas_id = $_POST['fakultas_id'] ?? '';
-                if ($nama && $fakultas_id) {
-                    $ctrl->create(['fakultas_id' => $fakultas_id, 'nama' => $nama]);
-                    header('Location: index.php?menu=jurusan');
-                    exit;
-                }
-            }
-            $fakultasCtrl = new FakultasController();
-            $fakultasList = $fakultasCtrl->index();
-            include __DIR__ . '/views/jurusan_form.php';
-        } elseif ($action == 'edit' && $id) {
-            $item = $ctrl->find($id);
-            if (!$item) {
-                echo "<p>Data tidak ditemukan</p>";
-            } else {
-                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                    $nama = $_POST['nama'] ?? '';
-                    $fakultas_id = $_POST['fakultas_id'] ?? '';
-                    if ($nama && $fakultas_id) {
-                        $ctrl->update($id, ['fakultas_id' => $fakultas_id, 'nama' => $nama]);
-                        header('Location: index.php?menu=jurusan');
-                        exit;
-                    }
-                }
-                $fakultasCtrl = new FakultasController();
-                $fakultasList = $fakultasCtrl->index();
-                include __DIR__ . '/views/jurusan_form.php';
-            }
-        } elseif ($action == 'delete' && $id) {
-            $ctrl->delete($id);
-            header('Location: index.php?menu=jurusan');
-            exit;
-        }
-        break;
-
-    case 'mahasiswa':
-        $ctrl = new MahasiswaController();
-        $pageTitle = "Kelola Mahasiswa";
-
-        if ($action == 'index') {
-            $items = $ctrl->index($keyword);
-            include __DIR__ . '/views/mahasiswa_index.php';
-        } elseif ($action == 'create') {
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                $nim = $_POST['nim'] ?? '';
-                $namaMhs = $_POST['nama'] ?? '';
-                $alamat = $_POST['alamat'] ?? '';
-                $jurusan_id = $_POST['jurusan_id'] ?? '';
-                if ($nim && $namaMhs && $jurusan_id) {
-                    $ctrl->create([
-                        'nim' => $nim,
-                        'nama' => $namaMhs,
-                        'alamat' => $alamat,
-                        'jurusan_id' => $jurusan_id
-                    ]);
-                    header('Location: index.php?menu=mahasiswa');
-                    exit;
-                }
-            }
-            $jurusanCtrl = new JurusanController();
-            $jurusanList = $jurusanCtrl->index();
-            include __DIR__ . '/views/mahasiswa_form.php';
-        } elseif ($action == 'edit' && $id) {
-            $item = $ctrl->find($id);
-            if (!$item) {
-                echo "<p>Data tidak ditemukan</p>";
-            } else {
-                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                    $nim = $_POST['nim'] ?? '';
-                    $namaMhs = $_POST['nama'] ?? '';
-                    $alamat = $_POST['alamat'] ?? '';
-                    $jurusan_id = $_POST['jurusan_id'] ?? '';
-                    if ($nim && $namaMhs && $jurusan_id) {
-                        $ctrl->update($id, [
-                            'nim' => $nim,
-                            'nama' => $namaMhs,
-                            'alamat' => $alamat,
-                            'jurusan_id' => $jurusan_id
-                        ]);
-                        header('Location: index.php?menu=mahasiswa');
-                        exit;
-                    }
-                }
-                $jurusanCtrl = new JurusanController();
-                $jurusanList = $jurusanCtrl->index();
-                include __DIR__ . '/views/mahasiswa_form.php';
-            }
-        } elseif ($action == 'delete' && $id) {
-            $ctrl->delete($id);
-            header('Location: index.php?menu=mahasiswa');
-            exit;
-        }
-        break;
-
-    default:
-        $pageTitle = "Dashboard";
-        include __DIR__ . '/views/home.php';
-        break;
-}
-
-$content = ob_get_clean();
+$content = routeRequest($menu, $action, $id, $keyword);
 
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title><?= e($pageTitle) ?></title>
-    <style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title><?= e($menu === 'home' ? 'Dashboard' : 'Kelola ' . ucfirst($menu)) ?></title>
+<style>
         /* Reset */
         * {
             box-sizing: border-box;
@@ -370,14 +211,15 @@ $content = ob_get_clean();
     </style>
 </head>
 <body>
-    <h1><?= e($pageTitle) ?></h1>
-    <div class="nav">
-        <a href="index.php" class="<?= $menu === 'home' ? 'active' : '' ?>">Dashboard</a>
-        <a href="index.php?menu=fakultas" class="<?= $menu === 'fakultas' ? 'active' : '' ?>">Kelola Fakultas</a>
-        <a href="index.php?menu=jurusan" class="<?= $menu === 'jurusan' ? 'active' : '' ?>">Kelola Jurusan</a>
-        <a href="index.php?menu=mahasiswa" class="<?= $menu === 'mahasiswa' ? 'active' : '' ?>">Kelola Mahasiswa</a>
-    </div>
+<h1><?= e($menu === 'home' ? 'Dashboard' : 'Kelola ' . ucfirst($menu)) ?></h1>
+<div class="nav">
+    <a href="index.php" class="<?= $menu === 'home' ? 'active' : '' ?>">Dashboard</a>
+    <a href="index.php?menu=fakultas" class="<?= $menu === 'fakultas' ? 'active' : '' ?>">Kelola Fakultas</a>
+    <a href="index.php?menu=jurusan" class="<?= $menu === 'jurusan' ? 'active' : '' ?>">Kelola Jurusan</a>
+    <a href="index.php?menu=mahasiswa" class="<?= $menu === 'mahasiswa' ? 'active' : '' ?>">Kelola Mahasiswa</a>
+</div>
 
-    <?= $content ?>
+<?= $content ?>
+
 </body>
 </html>
